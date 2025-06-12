@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
-# ---------------- USER MODEL ----------------
+
 class User(db.Model):
     __tablename__ = 'user'
 
@@ -63,7 +63,7 @@ class ParkingLot(db.Model):
         return f"<ParkingLot {self.id} - {self.prime_location_name}>"
 
 
-# ---------------- PARKING SPOT MODEL ----------------
+
 class ParkingSpot(db.Model):
     __tablename__ = 'parking_spot'
 
@@ -79,7 +79,7 @@ class ParkingSpot(db.Model):
     def __repr__(self):
         return f"<ParkingSpot {self.id} in Lot {self.lot_id} - Status: {self.status}>"
 
-# ---------------- RESERVATION MODEL ----------------
+
 class Reservation(db.Model):
     __tablename__ = 'reservation'
 
@@ -105,7 +105,7 @@ class Reservation(db.Model):
     def __repr__(self):
         return f"<Reservation {self.id} - User {self.user_id} - Spot {self.spot_id}>"
 
-# ---------------- BOOKING MODEL ----------------
+
 class Booking(db.Model):
     __tablename__ = 'booking'
 
@@ -116,9 +116,6 @@ class Booking(db.Model):
     start_time = db.Column(db.DateTime, default=datetime.utcnow)
     end_time = db.Column(db.DateTime, nullable=True)
 
-    # ⬇️ Optionally add a price cache column if you want to store price at booking time
-    # price_per_hour = db.Column(db.Float, nullable=True)
-
     def is_active(self):
         return self.end_time is None
 
@@ -126,7 +123,7 @@ class Booking(db.Model):
         if not self.end_time:
             return 0
         delta = self.end_time - self.start_time
-        return max(1, round(delta.total_seconds() / 3600))  # Minimum 1 hour
+        return max(1, round(delta.total_seconds() / 3600))  
 
     def calculate_price(self):
         return self.duration_hours() * self.parking_lot.price_per_hour
