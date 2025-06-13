@@ -38,7 +38,7 @@ class User(db.Model):
     def __repr__(self):
         return f"<User {self.id} - {self.username} - Admin: {self.is_admin}>"
 
-# ---------------- PARKING LOT MODEL ----------------
+
 class ParkingLot(db.Model):
     __tablename__ = 'parking_lot'
 
@@ -48,7 +48,7 @@ class ParkingLot(db.Model):
     address = db.Column(db.String(256), nullable=False)
     pin_code = db.Column(db.String(10), nullable=False)
     max_spots = db.Column(db.Integer, nullable=False)
-    spots_filled = db.Column(db.Integer, nullable=False, default=0)  # <-- Added here
+    spots_filled = db.Column(db.Integer, nullable=False, default=0)  
 
     spots = db.relationship('ParkingSpot', backref='lot', cascade="all, delete-orphan")
     bookings = db.relationship('Booking', backref='parking_lot', lazy=True)
@@ -58,6 +58,9 @@ class ParkingLot(db.Model):
 
     def has_available_spot(self):
         return self.spots_filled < self.max_spots
+    def actual_filled_count(self):
+        return sum(1 for spot in self.spots if spot.status == 'O')
+
 
     def __repr__(self):
         return f"<ParkingLot {self.id} - {self.prime_location_name}>"
@@ -69,7 +72,7 @@ class ParkingSpot(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     lot_id = db.Column(db.Integer, db.ForeignKey('parking_lot.id'), nullable=False)
-    status = db.Column(db.String(1), default='A')  # A = Available, O = Occupied
+    status = db.Column(db.String(1), default='A')  
 
     reservations = db.relationship('Reservation', backref='spot', cascade="all, delete-orphan")
 
@@ -78,7 +81,6 @@ class ParkingSpot(db.Model):
 
     def __repr__(self):
         return f"<ParkingSpot {self.id} in Lot {self.lot_id} - Status: {self.status}>"
-
 
 class Reservation(db.Model):
     __tablename__ = 'reservation'
@@ -89,6 +91,7 @@ class Reservation(db.Model):
     parking_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     leaving_timestamp = db.Column(db.DateTime, nullable=True)
     price_per_hour = db.Column(db.Float, nullable=False)
+    has_parked = db.Column(db.Boolean, default=False)  # ✅ Add this line
 
     def is_active(self):
         return self.leaving_timestamp is None
