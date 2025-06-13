@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+
+      <div class="card shadow-sm">
+        <div class="card-body text-center p-5">
+          <h2 class="mb-4">Admin Dashboard</h2>
+          <p class="lead mb-4">Welcome, Admin!</p>
+
+          <nav class="mb-4">
+            <ul class="nav nav-pills justify-content-center flex-wrap gap-2">
+              <li class="nav-item">
+                <a class="nav-link btn btn-outline-primary" href="{{ url_for('add_parking') }}">Add Parking Lot</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link btn btn-outline-primary" href="{{ url_for('view_parking_lots') }}">View Parking Lots</a>
+              </li>
+              <li class="nav-item">
+                {% if first_lot %}
+                  <a class="nav-link btn btn-outline-primary" href="{{ url_for('admin_view_spots', lot_id=first_lot.id) }}">Manage Spots</a>
+                {% else %}
+                  <span class="nav-link btn btn-outline-secondary disabled">No Parking Lots Yet</span>
+                {% endif %}
+              </li>
+              <li class="nav-item">
+                <a class="nav-link btn btn-outline-primary" href="{{ url_for('admin_users') }}">Users</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link btn btn-outline-primary" href="{{ url_for('admin_reports') }}">Reports</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link btn btn-outline-danger" href="{{ url_for('logout') }}">Logout</a>
+              </li>
+            </ul>
+          </nav>
+
+          <div>
+            <a href="{{ url_for('create_admin') }}" class="btn btn-primary">Create Admin</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

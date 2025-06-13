@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Welcome, {{ user.name }}! 👋</h2>
+
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="{{ url_for('user_dashboard') }}" class="list-group-item list-group-item-action active">Dashboard</a>
+                <a href="{{ url_for('view_parking_lots') }}" class="list-group-item list-group-item-action">View Parking Lots</a>
+
+                <div class="list-group-item">
+                    <div class="dropdown">
+                        <a class="dropdown-toggle text-dark" href="#" role="button" id="viewSpotsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            View Spots
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="viewSpotsDropdown">
+                            {% for lot in parking_lots %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('view_spots', lot_id=lot.id) }}">{{ lot.prime_location_name }}</a>
+                            </li>
+                            {% else %}
+                            <li><span class="dropdown-item text-muted">No Lots Available</span></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('book_parking') }}" class="list-group-item list-group-item-action">Book Lot</a>
+                <a href="{{ url_for('release_parking') }}" class="list-group-item list-group-item-action">Release Lot</a>
+                <a href="{{ url_for('user_history') }}" class="list-group-item list-group-item-action">History</a>
+                <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger">Logout</a>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Your Parking Overview</h5>
+                    <p class="card-text">
+                        Here you can manage your parking activities: book a new spot, release one, and view history.
+                    </p>
+                    <a href="{{ url_for('book_parking') }}" class="btn btn-primary me-2">Book a Spot</a>
+                    <a href="{{ url_for('release_parking') }}" class="btn btn-warning">Release Spot</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
