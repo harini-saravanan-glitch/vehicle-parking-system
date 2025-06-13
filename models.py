@@ -91,7 +91,7 @@ class Reservation(db.Model):
     parking_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     leaving_timestamp = db.Column(db.DateTime, nullable=True)
     price_per_hour = db.Column(db.Float, nullable=False)
-    has_parked = db.Column(db.Boolean, default=False)  # ✅ Add this line
+    has_parked = db.Column(db.Boolean, default=False) 
 
     def is_active(self):
         return self.leaving_timestamp is None
