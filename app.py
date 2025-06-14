@@ -155,3 +155,203 @@ def create_admin():
         return redirect(url_for('admin_users'))
 
     return render_template("create_admin.html")
+
+
+
+
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    first_lot = ParkingLot.query.first() 
+    return render_template("admin_dashboard.html", first_lot=first_lot)
+
+
+
+@app.route('/admin/add-parking', methods=['GET', 'POST'])
+def add_parking():
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        return redirect(url_for('admin_dashboard'))
+    return render_template("add_parking_lot.html")
+
+@app.route('/admin/edit-parking/<int:lot_id>', methods=['GET', 'POST'])
+def edit_parking(lot_id):
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    lot = ParkingLot.query.get_or_404(lot_id)
+
+    if request.method == 'POST':
+        lot.prime_location_name = request.form['prime_location_name']
+        lot.price_per_hour = request.form['price_per_hour']
+        lot.address = request.form['address']
+        lot.pin_code = request.form['pin_code']
+        lot.max_spots = request.form['max_spots']
+        db.session.commit()
+        flash("Parking lot updated successfully!")
+        return redirect(url_for('view_parking_lots'))
+
+    return render_template('edit_parking.html', lot=lot)
+
+@app.route('/admin/delete-parking/<int:lot_id>', methods=['POST', 'GET'])
+def delete_parking(lot_id):
+    lot = ParkingLot.query.get_or_404(lot_id)
+    db.session.delete(lot)
+    db.session.commit()
+    flash('Parking lot deleted successfully.', 'success')
+    return redirect(url_for('view_parking_lots'))
+
+
+
+
+@app.route('/admin/create-parking', methods=['POST'])
+def create_parking():
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    parking_lot = ParkingLot(
+        prime_location_name=request.form["prime_location_name"],
+        price_per_hour=request.form["price_per_hour"],
+        address=request.form["address"],
+        pin_code=request.form["pin_code"],
+        max_spots=int(request.form["max_spots"]),
+        spots_filled=0
+    )
+
+    db.session.add(parking_lot)
+    db.session.commit()
+
+    for i in range(parking_lot.max_spots):
+        spot = ParkingSpot(
+            lot_id=parking_lot.id,
+            status='A' 
+        )
+        db.session.add(spot)
+
+    db.session.commit()
+
+    flash("Parking lot and spots created successfully!")
+    return redirect(url_for('admin_dashboard'))
+
+
+from flask import request
+
+@app.route('/admin/view-parking')
+def view_parking_lots():
+    q = request.args.get('q', '').strip()
+    
+    if q:
+        parking_lots = ParkingLot.query.filter(
+            (ParkingLot.prime_location_name.ilike(f'%{q}%')) | 
+            (ParkingLot.pin_code.ilike(f'%{q}%'))
+        ).all()
+    else:
+        parking_lots = ParkingLot.query.all()
+
+    return render_template('view_parking_lots.html', parking_lots=parking_lots)
+
+
+@app.route('/admin/users')
+def admin_users():
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    users = User.query.all()
+    return render_template('admin_users.html', users=users)
+
+
+@app.route('/admin/reports')
+def admin_reports():
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    users = User.query.all()
+    admins = [u for u in users if u.is_admin]
+    total_bookings = Booking.query.count()
+    total_lots = ParkingLot.query.count()
+
+    return render_template('admin_reports.html',
+                           total_users=len(users),
+                           total_admins=len(admins),
+                           total_lots=total_lots,
+                           total_bookings=total_bookings)
+
+
+@app.route('/admin/view_spots/<int:lot_id>', methods=['GET', 'POST'])
+def admin_view_spots(lot_id):
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    lot = ParkingLot.query.get_or_404(lot_id)
+    spots = ParkingSpot.query.filter_by(lot_id=lot_id).all()
+
+    filled_count = ParkingSpot.query.filter_by(lot_id=lot_id, status='O').count()
+    actual_spot_count = len(spots)
+
+    return render_template(
+        'admin_view_spots.html',
+        lot=lot,
+        spots=spots,
+        filled_count=filled_count,
+        actual_spot_count=actual_spot_count
+    )
+
+
+
+@app.route('/admin/toggle-spot/<int:spot_id>', methods=['POST'])
+def toggle_spot_status(spot_id):
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    spot = ParkingSpot.query.get_or_404(spot_id)
+    lot = spot.lot  
+
+    if spot.status == 'A':
+        spot.status = 'O'
+        lot.spots_filled += 1
+    elif spot.status == 'O':
+        spot.status = 'A'
+        if lot.spots_filled > 0:
+            lot.spots_filled -= 1
+
+    db.session.commit()
+    flash(f"Spot {spot.id} status updated.")
+    return redirect(url_for('admin_view_spots', lot_id=lot.id))
+
+
+@app.route('/admin/delete-spot/<int:spot_id>', methods=['POST'])
+def delete_spot(spot_id):
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    spot = ParkingSpot.query.get_or_404(spot_id)
+    lot = spot.lot 
+
+  
+    if spot.status == 'O' and lot.spots_filled > 0:
+        lot.spots_filled -= 1
+
+    db.session.delete(spot)
+    db.session.commit()
+
+    flash(f"Spot {spot.id} deleted.")
+    return redirect(url_for('admin_view_spots', lot_id=lot.id))
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
