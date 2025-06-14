@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h2 class="mb-4">System Reports</h2>
+
+  <div class="row g-4">
+    <!-- Total Users -->
+    <div class="col-md-6 col-lg-3">
+      <div class="card text-bg-primary shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">Total Users</h5>
+          <p class="display-6">{{ total_users }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Admins -->
+    <div class="col-md-6 col-lg-3">
+      <div class="card text-bg-success shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">Total Admins</h5>
+          <p class="display-6">{{ total_admins }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Parking Lots -->
+    <div class="col-md-6 col-lg-3">
+      <div class="card text-bg-warning shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">Parking Lots</h5>
+          <p class="display-6">{{ total_lots }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Bookings -->
+    <div class="col-md-6 col-lg-3">
+      <div class="card text-bg-danger shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">Total Bookings</h5>
+          <p class="display-6">{{ total_bookings }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

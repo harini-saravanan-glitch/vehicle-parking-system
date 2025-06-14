@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Manage Parking Spots{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4 text-center">Parking Spots for {{ lot.prime_location_name }}</h2>
+  <p><strong>Address:</strong> {{ lot.address }} | <strong>PIN Code:</strong> {{ lot.pin_code }}</p>
+  <p><strong>Price per Hour:</strong> ₹{{ lot.price_per_hour }}</p>
+  <p><strong>Available:</strong> {{ actual_spot_count - filled_count }} / {{ actual_spot_count }} | 
+     <strong>Spots Filled:</strong> {{ filled_count }}</p>
+
+  <table class="table table-bordered table-striped mt-4">
+    <thead class="table-dark">
+      <tr>
+        <th>Spot ID</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for spot in spots %}
+      <tr>
+        <td>{{ spot.id }}</td>
+        <td>
+          {% if spot.status == 'A' %}
+            <span class="badge bg-success">Available</span>
+          {% else %}
+            <span class="badge bg-danger">Occupied</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="POST" action="{{ url_for('toggle_spot_status', spot_id=spot.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-sm btn-warning">Toggle Status</button>
+          </form>
+          <form method="POST" action="{{ url_for('delete_spot', spot_id=spot.id) }}" style="display:inline;" onsubmit="return confirm('Delete this spot?');">
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="3" class="text-center">No spots found for this parking lot.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{{ url_for('view_parking_lots') }}" class="btn btn-secondary mt-3">Back to Parking Lots</a>
+</div>
+{% endblock %}
+
