@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Available Parking Lots{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Available Parking Lots</h3>
+    {% if parking_lots %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Location</th>
+                    <th>Address</th>
+                    <th>PIN Code</th>
+                    <th>Price per Hour</th>
+                    <th>Available Spots</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lot in parking_lots %}
+                <tr>
+                    <td>{{ lot.prime_location_name }}</td>
+                    <td>{{ lot.address }}</td>
+                    <td>{{ lot.pin_code }}</td>
+                    <td>₹{{ lot.price_per_hour }}</td>
+                    <td>{{ lot.max_spots - lot.spots_filled }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No parking lots available.</p>
+    {% endif %}
+</div>
+{% endblock %}

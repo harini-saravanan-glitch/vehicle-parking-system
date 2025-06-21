@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Book Parking Spot{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Book Parking Spot - Step 2: Select Spot in "{{ lot.prime_location_name }}"</h2>
+  <form method="POST" action="{{ url_for('book_spot') }}">
+    <input type="hidden" name="lot_id" value="{{ lot.id }}">
+
+    <div class="mb-3">
+      <label for="spot_id">Available Spots</label>
+      <select name="spot_id" id="spot_id" class="form-control" required>
+        {% if spots %}
+          {% for spot in spots %}
+            <option value="{{ spot.id }}">Spot #{{ spot.id }} - Status: {{ 'Available' if spot.status == 'A' else 'Occupied' }}</option>
+          {% endfor %}
+        {% else %}
+          <option disabled>No spots available</option>
+        {% endif %}
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-success" {% if not spots %}disabled{% endif %}>Book Spot</button>
+    <a href="{{ url_for('book_parking') }}" class="btn btn-secondary">Back</a>
+  </form>
+</div>
+{% endblock %}

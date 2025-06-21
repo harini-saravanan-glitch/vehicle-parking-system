@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Release Parking{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Release Your Parking Lot Booking</h2>
+
+  {% if booking %}
+    {% if booking.end_time %}
+      <div class="alert alert-success" style="max-width: 540px;">
+        You have already released this booking.
+        <br>
+        <strong>Location:</strong> {{ booking.parking_lot.prime_location_name }}<br>
+        <strong>Released At:</strong> {{ booking.end_time.strftime('%d %b %Y, %H:%M') }}
+      </div>
+    {% else %}
+      <div class="card border-danger mb-3" style="max-width: 540px;">
+        <div class="card-header bg-danger text-white">Active Booking</div>
+        <div class="card-body text-danger">
+          <h5 class="card-title">{{ booking.parking_lot.prime_location_name }}</h5>
+          <p class="card-text">
+            <strong>Address:</strong> {{ booking.parking_lot.address }}<br>
+            <strong>Price per hour:</strong> ₹{{ booking.parking_lot.price_per_hour }}<br>
+            <strong>Booking Date:</strong> {{ booking.start_time.strftime('%Y-%m-%d %H:%M:%S') }}
+          </p>
+          <form method="POST">
+            <button type="submit" class="btn btn-danger">Release Booking</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="alert alert-info" role="alert" style="max-width: 540px;">
+      You currently have no active lot bookings.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+

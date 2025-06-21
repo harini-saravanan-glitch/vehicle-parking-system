@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Release Parking Spot{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Release Your Parking Spot</h2>
+  {% if reservations %}
+    {% for reservation in reservations %}
+      <div class="card border-danger mb-3" style="max-width: 540px;">
+        <div class="card-header bg-danger text-white">Active Reservation</div>
+        <div class="card-body text-danger">
+          <h5 class="card-title">{{ reservation.spot.lot.prime_location_name }} - Spot #{{ reservation.spot.id }}</h5>
+          <p class="card-text">
+            Address: {{ reservation.spot.lot.address }}<br>
+            Price per hour: ₹{{ reservation.price_per_hour }}<br>
+            Reserved At: {{ reservation.parking_timestamp.strftime('%d %b %Y, %H:%M') }}
+          </p>
+          <form method="POST" action="{{ url_for('release_spot', spot_id=reservation.spot.id) }}">
+            <button type="submit" class="btn btn-danger">Release Spot</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info" role="alert" style="max-width: 540px;">
+      You currently have no active spot reservations.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
