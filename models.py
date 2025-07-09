@@ -1,5 +1,8 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from datetime import timedelta
+import math
+
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
@@ -48,7 +51,7 @@ class ParkingLot(db.Model):
     address = db.Column(db.String(256), nullable=False)
     pin_code = db.Column(db.String(10), nullable=False)
     max_spots = db.Column(db.Integer, nullable=False)
-    spots_filled = db.Column(db.Integer, nullable=False, default=0)  
+    spots_filled = db.Column(db.Integer, nullable=False, default=0) 
 
     spots = db.relationship('ParkingSpot', backref='lot', cascade="all, delete-orphan")
     bookings = db.relationship('Booking', backref='parking_lot', lazy=True)
@@ -82,6 +85,7 @@ class ParkingSpot(db.Model):
     def __repr__(self):
         return f"<ParkingSpot {self.id} in Lot {self.lot_id} - Status: {self.status}>"
 
+
 class Reservation(db.Model):
     __tablename__ = 'reservation'
 
@@ -96,18 +100,34 @@ class Reservation(db.Model):
     def is_active(self):
         return self.leaving_timestamp is None
 
-    def duration_in_hours(self):
+    def duration_hours(self):
         if not self.leaving_timestamp:
-            return 0
-        duration = self.leaving_timestamp - self.parking_timestamp
-        return max(1, round(duration.total_seconds() / 3600))
+            return "N/A"
+        delta = self.leaving_timestamp - self.parking_timestamp
+        total_minutes = math.ceil(delta.total_seconds() / 60)
+        hours   = total_minutes // 60
+        minutes = total_minutes % 60
+        parts = []
+        if hours:
+            parts.append(f"{hours} hr{'s' if hours>1 else ''}")
+        parts.append(f"{minutes} min")
+        return " ".join(parts)
+
 
     def calculate_total_price(self):
-        return self.duration_in_hours() * self.price_per_hour
+        """
+        Charge per actual minute (rounding up) rather than per full hour.
+        E.g. 2 minutes @ ₹50/hr → (50/60)*2 = ₹1.67
+        """
+        if not self.leaving_timestamp:
+            return 0.0
+        delta = self.leaving_timestamp - self.parking_timestamp
+        total_minutes = math.ceil(delta.total_seconds() / 60)
+        cost = (self.price_per_hour / 60) * total_minutes
+        return round(cost, 2)
 
     def __repr__(self):
         return f"<Reservation {self.id} - User {self.user_id} - Spot {self.spot_id}>"
-
 
 class Booking(db.Model):
     __tablename__ = 'booking'
@@ -124,17 +144,27 @@ class Booking(db.Model):
 
     def duration_hours(self):
         if not self.end_time:
-            return 0
+            return "Still Active"
         delta = self.end_time - self.start_time
-        return max(1, round(delta.total_seconds() / 3600))  
+        total_minutes = math.ceil(delta.total_seconds() / 60)
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
+        parts = []
+        if hours:
+            parts.append(f"{hours} hr{'s' if hours > 1 else ''}")
+        parts.append(f"{minutes} min")
+        return " ".join(parts)
+
+
 
     def calculate_price(self):
-        return self.duration_hours() * self.parking_lot.price_per_hour
+        if not self.leaving_timestamp:
+            return 0.0
+        delta = self.leaving_timestamp - self.parking_timestamp
+        total_minutes = math.ceil(delta.total_seconds() / 60)
+        cost = (self.price_per_hour / 60) * total_minutes
+        return round(cost, 2)
+
 
     def __repr__(self):
         return f"<Booking {self.id} - User {self.user_id} - Lot {self.parking_lot_id}>"
-    
-
-
-
-
