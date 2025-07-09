@@ -28,14 +28,23 @@ with app.app_context():
 
 
 
+from flask import session, redirect, url_for
+
 @app.route('/')
 def home():
-    if session.get('user_id'):
-        if session.get('is_admin'):
-            return redirect(url_for('admin_dashboard'))
-        else:
-            return redirect(url_for('user_dashboard'))
-    return redirect(url_for('login'))
+    if not session.get('has_visited_home'):
+        session.clear()
+        session['has_visited_home'] = True
+
+    user_id  = session.get('user_id')
+    is_admin = session.get('is_admin', False)
+
+    if not user_id:
+        return redirect(url_for('login'))
+    if is_admin:
+        return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('user_dashboard'))
+
 
 
 
@@ -233,7 +242,7 @@ def create_parking():
     for i in range(parking_lot.max_spots):
         spot = ParkingSpot(
             lot_id=parking_lot.id,
-            status='A' 
+            status='A'  
         )
         db.session.add(spot)
 
@@ -258,6 +267,34 @@ def view_parking_lots():
         parking_lots = ParkingLot.query.all()
 
     return render_template('view_parking_lots.html', parking_lots=parking_lots)
+
+
+@app.route('/user/history')
+def user_history():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please log in to view history.")
+        return redirect(url_for('login'))
+
+ 
+    bookings     = Booking.query.filter_by(user_id=user_id).all()
+    reservations = Reservation.query.filter_by(user_id=user_id).all()
+
+    
+    total_booking_cost     = sum(
+        b.calculate_price() for b in bookings if b.end_time
+    )
+    total_reservation_cost = sum(
+        r.calculate_total_price() for r in reservations if r.leaving_timestamp
+    )
+    total_cost = round(total_booking_cost + total_reservation_cost, 2)
+
+    return render_template(
+        "user_history.html",
+        bookings=bookings,
+        reservations=reservations,
+        total_cost=total_cost
+    )
 
 
 
@@ -322,7 +359,7 @@ def book_parking():
             flash('Invalid parking lot selected.')
             return redirect(url_for('book_parking'))
 
-        
+        # Prevent lot booking if user has a reservation
         if Reservation.query.filter_by(user_id=user_id, leaving_timestamp=None).first():
             flash('You already have a spot reserved. Release it before booking a lot.')
             return redirect(url_for('user_dashboard'))
@@ -522,6 +559,7 @@ def reserve_spot(spot_id):
         flash("You already have an active reservation.")
         return redirect(url_for('user_dashboard'))
 
+    
     spot.status = 'O'
     spot.lot.spots_filled += 1
     reservation = Reservation(
@@ -582,6 +620,28 @@ def release_spot(spot_id):
     db.session.commit()
     flash("Spot released successfully.")
     return redirect(url_for('user_dashboard'))
+
+@app.route('/admin/records')
+def admin_records():
+    if not is_admin():
+        flash("Unauthorized access.")
+        return redirect(url_for('login'))
+
+    bookings     = Booking.query.order_by(Booking.start_time.desc()).all()
+    reservations = Reservation.query.order_by(Reservation.parking_timestamp.desc()).all()
+
+    total_bookings_rev     = sum(b.calculate_price() for b in bookings if b.end_time)
+    total_reservations_rev = sum(r.calculate_total_price() for r in reservations if r.leaving_timestamp)
+    total_revenue = round(total_bookings_rev + total_reservations_rev, 2)
+
+    return render_template(
+        'admin_records.html',
+        bookings=bookings,
+        reservations=reservations,
+        total_revenue=total_revenue
+    )
+
+
 
 
 
