@@ -32,10 +32,12 @@ from flask import session, redirect, url_for
 
 @app.route('/')
 def home():
+    
     if not session.get('has_visited_home'):
         session.clear()
         session['has_visited_home'] = True
 
+    
     user_id  = session.get('user_id')
     is_admin = session.get('is_admin', False)
 
@@ -239,6 +241,7 @@ def create_parking():
     db.session.add(parking_lot)
     db.session.commit()
 
+    
     for i in range(parking_lot.max_spots):
         spot = ParkingSpot(
             lot_id=parking_lot.id,
@@ -276,11 +279,11 @@ def user_history():
         flash("Please log in to view history.")
         return redirect(url_for('login'))
 
- 
+    
     bookings     = Booking.query.filter_by(user_id=user_id).all()
     reservations = Reservation.query.filter_by(user_id=user_id).all()
 
-    
+   
     total_booking_cost     = sum(
         b.calculate_price() for b in bookings if b.end_time
     )
@@ -359,7 +362,7 @@ def book_parking():
             flash('Invalid parking lot selected.')
             return redirect(url_for('book_parking'))
 
-        # Prevent lot booking if user has a reservation
+        
         if Reservation.query.filter_by(user_id=user_id, leaving_timestamp=None).first():
             flash('You already have a spot reserved. Release it before booking a lot.')
             return redirect(url_for('user_dashboard'))
@@ -370,6 +373,10 @@ def book_parking():
 
         booking = Booking(user_id=user_id, parking_lot_id=lot.id)
         db.session.add(booking)
+        for spot in lot.spots:
+            if spot.status == 'A':
+               spot.status = 'O'
+               lot.spots_filled += 1
         db.session.commit()
         flash(f'Lot {lot.prime_location_name} booked successfully!')
         return redirect(url_for('user_dashboard'))
@@ -391,8 +398,11 @@ def release_parking():
         if booking:
             booking.end_time = datetime.utcnow()  
             lot = ParkingLot.query.get(booking.parking_lot_id)
-            if lot and lot.spots_filled > 0:
-                lot.spots_filled -= 1
+            if lot:
+               for spot in lot.spots:
+                  spot.status = 'A'
+               lot.spots_filled = 0
+
             db.session.commit()
             flash('Lot booking released.')
         else:
@@ -413,20 +423,25 @@ def view_spots(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)
     spots = ParkingSpot.query.filter_by(lot_id=lot_id).all()
 
-    filled_count = sum(1 for spot in spots if spot.status == 'O')
-    actual_spot_count = len(spots)
-
     
-    has_booking = Booking.query.filter_by(user_id=user_id).first() is not None
+    filled_count = sum(1 for spot in spots if spot.status == 'O')
+    total_spots = len(spots)
+    available_spots = total_spots - filled_count
+
+    has_booking = Booking.query.filter_by(user_id=user_id, end_time=None).first() is not None
+
 
     return render_template(
-        'view_spots.html',
-        lot=lot,
-        spots=spots,
-        filled_count=filled_count,
-        actual_spot_count=actual_spot_count,
-        has_booking=has_booking
-    )
+    'view_spots.html',
+    lot=lot,
+    spots=spots,
+    filled_count=filled_count,
+    total_spots=total_spots,
+    available_spots=available_spots,
+    has_booking=has_booking
+)
+
+
 
 
 
@@ -506,7 +521,7 @@ def toggle_spot_status(spot_id):
         return redirect(url_for('login'))
 
     spot = ParkingSpot.query.get_or_404(spot_id)
-    lot = spot.lot 
+    lot = spot.lot  
 
     if spot.status == 'A':
         spot.status = 'O'
@@ -528,7 +543,7 @@ def delete_spot(spot_id):
         return redirect(url_for('login'))
 
     spot = ParkingSpot.query.get_or_404(spot_id)
-    lot = spot.lot 
+    lot = spot.lot  
 
     
     if spot.status == 'O' and lot.spots_filled > 0:
@@ -647,3 +662,8 @@ def admin_records():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+
